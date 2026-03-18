@@ -27,6 +27,7 @@ interface AppShellProps {
 
 export default function AppShell({ children, currentScreen, onNavigate, userRole = "admin", userName = "Admin", isOnline = true, onLogout }: AppShellProps) {
   const filteredNav = navItems.filter(item => {
+    if (item.adminOnly && userRole !== "admin") return false;
     if (userRole === "vendeur") return ["dashboard", "clients", "subscriptions", "performance"].includes(item.id);
     if (userRole === "gerant") return ["dashboard", "clients", "subscriptions", "reports", "performance"].includes(item.id);
     return true;

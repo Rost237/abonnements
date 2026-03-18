@@ -24,6 +24,10 @@ const Index = () => {
         return <ClientsScreen />;
       case "subscriptions":
         return <SubscriptionScreen />;
+      case "zones":
+        return <ZonesScreen />;
+      case "fat":
+        return <FATScreen />;
       case "reports":
         return <div className="space-y-4"><h2 className="text-xl font-bold text-foreground">Rapports</h2><p className="text-muted-foreground text-sm">Les rapports seront disponibles avec Lovable Cloud.</p></div>;
       case "performance":
