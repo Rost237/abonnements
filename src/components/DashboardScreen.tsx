@@ -42,10 +42,10 @@ export default function DashboardScreen({ onNavigate, userRole }: DashboardScree
 
       {/* Goal Ring */}
       <div className="bg-card rounded-lg shadow-card p-6">
-        <GoalRing current={375000} target={500000} />
+        <GoalRing current={0} target={500000} />
         <div className="text-center mt-3 space-y-1">
-          <p className="text-sm font-semibold text-foreground tabular-nums">375 000 / 500 000 FCFA</p>
-          <p className="text-xs text-muted-foreground">Reste 125 000 FCFA pour atteindre l'objectif</p>
+          <p className="text-sm font-semibold text-foreground tabular-nums">0 / 500 000 FCFA</p>
+          <p className="text-xs text-muted-foreground">Reste 500 000 FCFA pour atteindre l'objectif</p>
         </div>
       </div>
 

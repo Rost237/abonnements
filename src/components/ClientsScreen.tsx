@@ -5,13 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-const demoClients = [
-  { id: 1, name: "Jean Mbarga", phone: "699 123 456", email: "jean@mail.com", zone: "Zone A", status: "actif" as const },
-  { id: 2, name: "Marie Fotso", phone: "677 234 567", email: "marie@mail.com", zone: "Zone B", status: "actif" as const },
-  { id: 3, name: "Paul Ndjock", phone: "655 345 678", email: "", zone: "Zone A", status: "prospect" as const },
-  { id: 4, name: "Sophie Ateba", phone: "690 456 789", email: "sophie@mail.com", zone: "Zone C", status: "inactif" as const },
-  { id: 5, name: "Alain Tchio", phone: "670 567 890", email: "", zone: "Zone B", status: "actif" as const },
-];
+const demoClients: { id: number; name: string; phone: string; email: string; zone: string; status: "actif" | "prospect" | "inactif" }[] = [];
 
 const statusConfig = {
   actif: { label: "Actif", className: "bg-success/15 text-success border-success/30" },

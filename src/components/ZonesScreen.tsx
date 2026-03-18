@@ -18,9 +18,7 @@ interface Zone {
   description: string;
 }
 
-const initialZones: Zone[] = [
-  { id: "1", nom: "Zone Nord", code: "ZN-001", ville: "Douala", quartier: "Akwa", localisation: "4.0511,9.7679", description: "Zone couvrant le secteur nord d'Akwa" },
-  { id: "2", nom: "Zone Sud", code: "ZS-002", ville: "Douala", quartier: "Bonapriso", localisation: "4.0155,9.7122", description: "Quartier résidentiel Bonapriso" },
+const initialZones: Zone[] = [];
 ];
 
 const emptyZone: Omit<Zone, "id"> = { nom: "", code: "", ville: "", quartier: "", localisation: "", description: "" };
