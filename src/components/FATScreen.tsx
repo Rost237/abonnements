@@ -18,7 +18,6 @@ interface FAT {
 }
 
 const initialFATs: FAT[] = [];
-];
 
 const emptyFAT: Omit<FAT, "id"> = { nom: "", code: "", ville: "", quartier: "", localisation: "", description: "" };
 

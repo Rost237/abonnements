@@ -19,7 +19,6 @@ interface Zone {
 }
 
 const initialZones: Zone[] = [];
-];
 
 const emptyZone: Omit<Zone, "id"> = { nom: "", code: "", ville: "", quartier: "", localisation: "", description: "" };
 
