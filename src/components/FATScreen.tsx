@@ -17,10 +17,7 @@ interface FAT {
   description: string;
 }
 
-const initialFATs: FAT[] = [
-  { id: "1", nom: "FAT Akwa Centre", code: "FAT-001", ville: "Douala", quartier: "Akwa", localisation: "4.0511,9.7679", description: "Terminal fibre principal Akwa" },
-  { id: "2", nom: "FAT Bonapriso", code: "FAT-002", ville: "Douala", quartier: "Bonapriso", localisation: "4.0155,9.7122", description: "Terminal résidentiel Bonapriso" },
-];
+const initialFATs: FAT[] = [];
 
 const emptyFAT: Omit<FAT, "id"> = { nom: "", code: "", ville: "", quartier: "", localisation: "", description: "" };
 
