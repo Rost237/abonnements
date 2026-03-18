@@ -4,6 +4,8 @@ import LoginScreen from "@/components/LoginScreen";
 import DashboardScreen from "@/components/DashboardScreen";
 import ClientsScreen from "@/components/ClientsScreen";
 import SubscriptionScreen from "@/components/SubscriptionScreen";
+import ZonesScreen from "@/components/ZonesScreen";
+import FATScreen from "@/components/FATScreen";
 
 const Index = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
