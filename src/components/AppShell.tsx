@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Wifi, WifiOff, LayoutDashboard, Users, Radio, UserCircle, Settings, LogOut, FileText, Target } from "lucide-react";
+import { Wifi, WifiOff, LayoutDashboard, Users, Radio, UserCircle, Settings, LogOut, FileText, Target, MapPinned, Cable } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", id: "dashboard" },
   { icon: Users, label: "Clients", id: "clients" },
   { icon: Radio, label: "Abonnements", id: "subscriptions" },
+  { icon: MapPinned, label: "Zones", id: "zones", adminOnly: true },
+  { icon: Cable, label: "FAT", id: "fat", adminOnly: true },
   { icon: FileText, label: "Rapports", id: "reports" },
   { icon: Target, label: "Performance", id: "performance" },
   { icon: UserCircle, label: "Utilisateurs", id: "users" },
@@ -25,6 +27,7 @@ interface AppShellProps {
 
 export default function AppShell({ children, currentScreen, onNavigate, userRole = "admin", userName = "Admin", isOnline = true, onLogout }: AppShellProps) {
   const filteredNav = navItems.filter(item => {
+    if (item.adminOnly && userRole !== "admin") return false;
     if (userRole === "vendeur") return ["dashboard", "clients", "subscriptions", "performance"].includes(item.id);
     if (userRole === "gerant") return ["dashboard", "clients", "subscriptions", "reports", "performance"].includes(item.id);
     return true;

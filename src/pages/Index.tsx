@@ -4,6 +4,8 @@ import LoginScreen from "@/components/LoginScreen";
 import DashboardScreen from "@/components/DashboardScreen";
 import ClientsScreen from "@/components/ClientsScreen";
 import SubscriptionScreen from "@/components/SubscriptionScreen";
+import ZonesScreen from "@/components/ZonesScreen";
+import FATScreen from "@/components/FATScreen";
 
 const Index = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -22,6 +24,10 @@ const Index = () => {
         return <ClientsScreen />;
       case "subscriptions":
         return <SubscriptionScreen />;
+      case "zones":
+        return <ZonesScreen />;
+      case "fat":
+        return <FATScreen />;
       case "reports":
         return <div className="space-y-4"><h2 className="text-xl font-bold text-foreground">Rapports</h2><p className="text-muted-foreground text-sm">Les rapports seront disponibles avec Lovable Cloud.</p></div>;
       case "performance":
