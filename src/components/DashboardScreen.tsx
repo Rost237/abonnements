@@ -8,16 +8,12 @@ interface DashboardScreenProps {
   userRole: "admin" | "gerant" | "vendeur";
 }
 
-const recentActivity = [
-  { client: "Jean Mbarga", action: "Abonnement Medium", amount: "15 000 FCFA", time: "Il y a 2h" },
-  { client: "Marie Fotso", action: "Abonnement Small", amount: "10 000 FCFA", time: "Il y a 5h" },
-  { client: "Paul Ndjock", action: "Abonnement Large", amount: "25 000 FCFA", time: "Hier" },
-];
+const recentActivity: { client: string; action: string; amount: string; time: string }[] = [];
 
 const stats = [
-  { label: "Clients actifs", value: "124", icon: Users, color: "text-success" },
-  { label: "Abonnements", value: "98", icon: Radio, color: "text-primary" },
-  { label: "CA du mois", value: "1.2M", icon: TrendingUp, color: "text-warning" },
+  { label: "Clients actifs", value: "0", icon: Users, color: "text-success" },
+  { label: "Abonnements", value: "0", icon: Radio, color: "text-primary" },
+  { label: "CA du mois", value: "0", icon: TrendingUp, color: "text-warning" },
 ];
 
 export default function DashboardScreen({ onNavigate, userRole }: DashboardScreenProps) {
