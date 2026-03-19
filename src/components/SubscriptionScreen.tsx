@@ -15,9 +15,10 @@ const durations = [
 
 interface SubscriptionScreenProps {
   offres: Offre[];
+  userRole: "admin" | "gerant" | "vendeur";
 }
 
-export default function SubscriptionScreen({ offres }: SubscriptionScreenProps) {
+export default function SubscriptionScreen({ offres, userRole }: SubscriptionScreenProps) {
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [selectedOffer, setSelectedOffer] = useState<number | null>(null);
@@ -25,6 +26,8 @@ export default function SubscriptionScreen({ offres }: SubscriptionScreenProps) 
   const [codeFat, setCodeFat] = useState("");
   const [showReceipt, setShowReceipt] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
+
+  const canCreate = userRole === "admin" || userRole === "vendeur";
 
   const total = selectedOffer !== null && offres[selectedOffer] ? offres[selectedOffer].price * selectedDuration : 0;
   const formatCurrency = (n: number) => new Intl.NumberFormat("fr-FR").format(n) + " FCFA";
@@ -67,6 +70,15 @@ export default function SubscriptionScreen({ offres }: SubscriptionScreenProps) 
     win.document.close();
     win.print();
   };
+
+  if (!canCreate) {
+    return (
+      <div className="space-y-4 max-w-lg">
+        <h2 className="text-xl font-bold text-foreground tracking-tight">Abonnements</h2>
+        <p className="text-sm text-muted-foreground">Vous n'avez pas les droits pour créer des abonnements.</p>
+      </div>
+    );
+  }
 
   if (showReceipt) {
     return (
@@ -116,7 +128,6 @@ export default function SubscriptionScreen({ offres }: SubscriptionScreenProps) 
         </div>
       </div>
 
-      {/* Duration */}
       <div className="space-y-2">
         <Label className="text-foreground">Durée</Label>
         <div className="grid grid-cols-4 gap-2">
@@ -132,7 +143,6 @@ export default function SubscriptionScreen({ offres }: SubscriptionScreenProps) 
         </div>
       </div>
 
-      {/* Offers */}
       <div className="space-y-2">
         <Label className="text-foreground">Offre</Label>
         {offres.length === 0 ? (
@@ -160,7 +170,6 @@ export default function SubscriptionScreen({ offres }: SubscriptionScreenProps) 
         )}
       </div>
 
-      {/* Sticky Footer */}
       <div className="bg-card rounded-lg shadow-elevated p-4 flex items-center justify-between sticky bottom-0">
         <div>
           <p className="text-xs text-muted-foreground">Total</p>

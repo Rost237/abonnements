@@ -2,10 +2,10 @@ import { useState } from "react";
 import AppShell from "@/components/AppShell";
 import LoginScreen from "@/components/LoginScreen";
 import DashboardScreen from "@/components/DashboardScreen";
-import ClientsScreen from "@/components/ClientsScreen";
+import ClientsScreen, { type Client } from "@/components/ClientsScreen";
 import SubscriptionScreen from "@/components/SubscriptionScreen";
-import ZonesScreen from "@/components/ZonesScreen";
-import FATScreen from "@/components/FATScreen";
+import ZonesScreen, { type Zone } from "@/components/ZonesScreen";
+import FATScreen, { type FAT } from "@/components/FATScreen";
 import OffresScreen, { defaultOffres, type Offre } from "@/components/OffresScreen";
 
 const Index = () => {
@@ -13,6 +13,9 @@ const Index = () => {
   const [userRole, setUserRole] = useState<"admin" | "gerant" | "vendeur">("admin");
   const [currentScreen, setCurrentScreen] = useState("dashboard");
   const [offres, setOffres] = useState<Offre[]>(defaultOffres);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [fats, setFats] = useState<FAT[]>([]);
 
   if (!isLoggedIn) {
     return <LoginScreen onLogin={(role) => { setUserRole(role); setIsLoggedIn(true); }} />;
@@ -23,13 +26,13 @@ const Index = () => {
       case "dashboard":
         return <DashboardScreen onNavigate={setCurrentScreen} userRole={userRole} />;
       case "clients":
-        return <ClientsScreen />;
+        return <ClientsScreen userRole={userRole} clients={clients} onClientsChange={setClients} />;
       case "subscriptions":
-        return <SubscriptionScreen offres={offres} />;
+        return <SubscriptionScreen offres={offres} userRole={userRole} />;
       case "zones":
-        return <ZonesScreen />;
+        return <ZonesScreen userRole={userRole} zones={zones} onZonesChange={setZones} />;
       case "fat":
-        return <FATScreen />;
+        return <FATScreen userRole={userRole} fats={fats} onFatsChange={setFats} />;
       case "offres":
         return <OffresScreen offres={offres} onOffresChange={setOffres} />;
       case "reports":
@@ -50,7 +53,7 @@ const Index = () => {
       currentScreen={currentScreen}
       onNavigate={setCurrentScreen}
       userRole={userRole}
-      userName={userRole === "admin" ? "Admin" : "Vendeur"}
+      userName={userRole === "admin" ? "Admin" : userRole === "gerant" ? "Gérant" : "Vendeur"}
       isOnline={true}
       onLogout={() => setIsLoggedIn(false)}
     >
