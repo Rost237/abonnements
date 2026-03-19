@@ -23,7 +23,7 @@ const statusConfig = {
   inactif: { label: "Inactif", className: "bg-destructive/15 text-destructive border-destructive/30" },
 };
 
-const emptyForm = { name: "", phone: "", email: "", zone: "", status: "prospect" as const };
+const emptyForm: { name: string; phone: string; email: string; zone: string; status: "actif" | "prospect" | "inactif" } = { name: "", phone: "", email: "", zone: "", status: "prospect" };
 
 interface ClientsScreenProps {
   userRole: "admin" | "gerant" | "vendeur";
