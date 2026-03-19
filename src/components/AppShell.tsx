@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Wifi, WifiOff, LayoutDashboard, Users, Radio, UserCircle, Settings, LogOut, FileText, Target, MapPinned, Cable } from "lucide-react";
+import { Wifi, WifiOff, LayoutDashboard, Users, Radio, UserCircle, Settings, LogOut, FileText, Target, MapPinned, Cable, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
