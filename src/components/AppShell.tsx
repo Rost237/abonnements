@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Wifi, WifiOff, LayoutDashboard, Users, Radio, UserCircle, Settings, LogOut, FileText, Target, MapPinned, Cable } from "lucide-react";
+import { Wifi, WifiOff, LayoutDashboard, Users, Radio, UserCircle, Settings, LogOut, FileText, Target, MapPinned, Cable, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { icon: Radio, label: "Abonnements", id: "subscriptions" },
   { icon: MapPinned, label: "Zones", id: "zones", adminOnly: true },
   { icon: Cable, label: "FAT", id: "fat", adminOnly: true },
+  { icon: Tag, label: "Offres", id: "offres", adminOnly: true },
   { icon: FileText, label: "Rapports", id: "reports" },
   { icon: Target, label: "Performance", id: "performance" },
   { icon: UserCircle, label: "Utilisateurs", id: "users" },
