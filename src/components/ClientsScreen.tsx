@@ -1,21 +1,13 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Plus, Phone, Mail, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, Phone, Pencil, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-export interface Client {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  zone: string;
-  status: "actif" | "prospect" | "inactif";
-}
+import type { Client, Zone, Sector, UserRole } from "@/types";
 
 const statusConfig = {
   actif: { label: "Actif", className: "bg-success/15 text-success border-success/30" },
@@ -23,27 +15,29 @@ const statusConfig = {
   inactif: { label: "Inactif", className: "bg-destructive/15 text-destructive border-destructive/30" },
 };
 
-const emptyForm: { name: string; phone: string; email: string; zone: string; status: "actif" | "prospect" | "inactif" } = { name: "", phone: "", email: "", zone: "", status: "prospect" };
+const emptyForm: Omit<Client, "id"> = { name: "", phone: "", email: "", zone: "", secteur: "", nbUtilisateurs: 1, typeClient: "menage", localisation: "", status: "prospect" };
 
 interface ClientsScreenProps {
-  userRole: "admin" | "gerant" | "vendeur";
+  userRole: UserRole;
   clients: Client[];
   onClientsChange: (clients: Client[]) => void;
+  zones: Zone[];
+  sectors: Sector[];
 }
 
-export default function ClientsScreen({ userRole, clients, onClientsChange }: ClientsScreenProps) {
+export default function ClientsScreen({ userRole, clients, onClientsChange, zones, sectors }: ClientsScreenProps) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "actif" | "prospect" | "inactif">("all");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState<Omit<Client, "id">>(emptyForm);
 
-  const canCreate = userRole === "admin" || userRole === "vendeur";
-  const canEdit = userRole === "admin";
-  const canDelete = userRole === "admin";
+  const canCreate = userRole === "admin" || userRole === "coadmin" || userRole === "vendeur" || userRole === "gerant";
+  const canEdit = userRole === "admin" || userRole === "coadmin";
+  const canDelete = userRole === "admin" || userRole === "coadmin";
 
   const filtered = clients.filter(c => {
-    const matchSearch = c.name.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search);
     const matchFilter = filter === "all" || c.status === filter;
     return matchSearch && matchFilter;
   });
@@ -62,39 +56,28 @@ export default function ClientsScreen({ userRole, clients, onClientsChange }: Cl
 
   const handleEdit = (client: Client) => {
     setEditing(client);
-    setForm({ name: client.name, phone: client.phone, email: client.email, zone: client.zone, status: client.status });
+    setForm({ name: client.name, phone: client.phone, email: client.email, zone: client.zone, secteur: client.secteur, nbUtilisateurs: client.nbUtilisateurs, typeClient: client.typeClient, localisation: client.localisation, status: client.status });
     setOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    onClientsChange(clients.filter(c => c.id !== id));
-  };
+  const handleDelete = (id: string) => onClientsChange(clients.filter(c => c.id !== id));
+  const openNew = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
 
-  const openNew = () => {
-    setEditing(null);
-    setForm(emptyForm);
-    setOpen(true);
-  };
+  const filteredSectors = form.zone ? sectors.filter(s => s.zoneId === form.zone) : sectors;
 
   return (
     <div className="space-y-4 max-w-4xl">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-foreground tracking-tight">Clients</h2>
-        {canCreate && (
-          <Button size="sm" className="rounded-md gap-1.5 font-semibold" onClick={openNew}>
-            <Plus size={16} /> Ajouter
-          </Button>
-        )}
+        {canCreate && <Button size="sm" className="rounded-md gap-1.5 font-semibold" onClick={openNew}><Plus size={16} /> Ajouter</Button>}
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editing ? "Modifier le client" : "Nouveau client"}</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{editing ? "Modifier le client" : "Nouveau client"}</DialogTitle></DialogHeader>
           <div className="space-y-3 pt-2">
             <div className="space-y-1.5">
-              <Label className="text-foreground">Nom complet *</Label>
+              <Label className="text-foreground">Noms et prénoms *</Label>
               <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Jean Dupont" className="h-10 rounded-md" />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -109,28 +92,54 @@ export default function ClientsScreen({ userRole, clients, onClientsChange }: Cl
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-foreground">Zone / Secteur</Label>
-                <Input value={form.zone} onChange={e => setForm(f => ({ ...f, zone: e.target.value }))} placeholder="Zone Nord" className="h-10 rounded-md" />
+                <Label className="text-foreground">Zone *</Label>
+                <Select value={form.zone} onValueChange={v => setForm(f => ({ ...f, zone: v, secteur: "" }))}>
+                  <SelectTrigger className="h-10 rounded-md"><SelectValue placeholder="Choisir" /></SelectTrigger>
+                  <SelectContent>{zones.map(z => <SelectItem key={z.id} value={z.id}>{z.nom}</SelectItem>)}</SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-foreground">Statut</Label>
-                <Select value={form.status} onValueChange={(v: "actif" | "prospect" | "inactif") => setForm(f => ({ ...f, status: v }))}>
-                  <SelectTrigger className="h-10 rounded-md">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="prospect">Prospect</SelectItem>
-                    <SelectItem value="actif">Actif</SelectItem>
-                    <SelectItem value="inactif">Inactif</SelectItem>
-                  </SelectContent>
+                <Label className="text-foreground">Secteur</Label>
+                <Select value={form.secteur} onValueChange={v => setForm(f => ({ ...f, secteur: v }))}>
+                  <SelectTrigger className="h-10 rounded-md"><SelectValue placeholder="Choisir" /></SelectTrigger>
+                  <SelectContent>{filteredSectors.map(s => <SelectItem key={s.id} value={s.id}>{s.nom}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-foreground">Type</Label>
+                <Select value={form.typeClient} onValueChange={(v: "entreprise" | "menage") => setForm(f => ({ ...f, typeClient: v }))}>
+                  <SelectTrigger className="h-10 rounded-md"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="menage">Ménage</SelectItem>
+                    <SelectItem value="entreprise">Entreprise</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-foreground">Nb utilisateurs</Label>
+                <Input type="number" value={form.nbUtilisateurs} onChange={e => setForm(f => ({ ...f, nbUtilisateurs: Number(e.target.value) }))} className="h-10 rounded-md" min={1} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-foreground">Localisation (Google Maps)</Label>
+              <Input value={form.localisation} onChange={e => setForm(f => ({ ...f, localisation: e.target.value }))} placeholder="Lien Google Maps ou coordonnées" className="h-10 rounded-md" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-foreground">Statut</Label>
+              <Select value={form.status} onValueChange={(v: "actif" | "prospect" | "inactif") => setForm(f => ({ ...f, status: v }))}>
+                <SelectTrigger className="h-10 rounded-md"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="prospect">Prospect</SelectItem>
+                  <SelectItem value="actif">Actif</SelectItem>
+                  <SelectItem value="inactif">Inactif</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex gap-2 pt-2">
               <Button variant="outline" className="flex-1 rounded-md" onClick={() => setOpen(false)}>Annuler</Button>
-              <Button className="flex-1 rounded-md" onClick={handleSave} disabled={!form.name || !form.phone}>
-                {editing ? "Modifier" : "Créer"}
-              </Button>
+              <Button className="flex-1 rounded-md" onClick={handleSave} disabled={!form.name || !form.phone}>{editing ? "Modifier" : "Créer"}</Button>
             </div>
           </div>
         </DialogContent>
@@ -143,11 +152,8 @@ export default function ClientsScreen({ userRole, clients, onClientsChange }: Cl
 
       <div className="flex gap-2">
         {(["all", "actif", "prospect", "inactif"] as const).map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${filter === f ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground hover:bg-accent/80"}`}
-          >
+          <button key={f} onClick={() => setFilter(f)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${filter === f ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground hover:bg-accent/80"}`}>
             {f === "all" ? "Tous" : statusConfig[f].label}
           </button>
         ))}
@@ -157,40 +163,25 @@ export default function ClientsScreen({ userRole, clients, onClientsChange }: Cl
         {filtered.length === 0 ? (
           <div className="p-8 text-center">
             <p className="text-sm text-muted-foreground mb-3">Aucun client trouvé</p>
-            {canCreate && (
-              <Button size="sm" className="rounded-md gap-1.5" onClick={openNew}><Plus size={16} /> Créer un client</Button>
-            )}
+            {canCreate && <Button size="sm" className="rounded-md gap-1.5" onClick={openNew}><Plus size={16} /> Créer un client</Button>}
           </div>
-        ) : (
-          filtered.map((c, i) => (
-            <motion.div
-              key={c.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: i * 0.03 }}
-              className="flex items-center justify-between px-4 py-3 hover:bg-accent transition-colors duration-150"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                  <span className="flex items-center gap-1"><Phone size={10} />{c.phone}</span>
-                  <span>{c.zone}</span>
-                </div>
+        ) : filtered.map((c, i) => (
+          <motion.div key={c.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
+            className="flex items-center justify-between px-4 py-3 hover:bg-accent transition-colors duration-150">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                <span className="flex items-center gap-1"><Phone size={10} />{c.phone}</span>
+                <span>{zones.find(z => z.id === c.zone)?.nom || c.zone}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className={statusConfig[c.status].className + " text-xs"}>
-                  {statusConfig[c.status].label}
-                </Badge>
-                {canEdit && (
-                  <button onClick={() => handleEdit(c)} className="p-1.5 rounded-md hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"><Pencil size={14} /></button>
-                )}
-                {canDelete && (
-                  <button onClick={() => handleDelete(c.id)} className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
-                )}
-              </div>
-            </motion.div>
-          ))
-        )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className={statusConfig[c.status].className + " text-xs"}>{statusConfig[c.status].label}</Badge>
+              {canEdit && <button onClick={() => handleEdit(c)} className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"><Pencil size={14} /></button>}
+              {canDelete && <button onClick={() => handleDelete(c.id)} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>}
+            </div>
+          </motion.div>
+        ))}
       </div>
       <p className="text-xs text-muted-foreground">{clients.length} client(s) au total</p>
     </div>
