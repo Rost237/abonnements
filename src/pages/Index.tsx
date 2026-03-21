@@ -10,19 +10,44 @@ import OffresScreen, { defaultOffreGroups } from "@/components/OffresScreen";
 import UsersScreen from "@/components/UsersScreen";
 import SettingsScreen from "@/components/SettingsScreen";
 import SectorsScreen from "@/components/SectorsScreen";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 import type { AppUser, Client, Zone, FAT, Sector, OffreGroup, Subscription, CompanyConfig } from "@/types";
 
-const adminUser: AppUser = {
-  id: "admin-root",
-  login: "admin",
-  password: "admin",
-  role: "admin",
-  name: "Administrateur",
-  mustChangePassword: false,
-  zones: [],
-  secteurs: [],
-  objectifMensuel: 0,
-};
+const defaultUsers: AppUser[] = [
+  {
+    id: "admin-root",
+    login: "admin",
+    password: "admin",
+    role: "admin",
+    name: "Administrateur",
+    mustChangePassword: false,
+    zones: [],
+    secteurs: [],
+    objectifMensuel: 0,
+  },
+  {
+    id: "gerant-default",
+    login: "Gerant",
+    password: "g2026",
+    role: "gerant",
+    name: "Gérant",
+    mustChangePassword: true,
+    zones: [],
+    secteurs: [],
+    objectifMensuel: 0,
+  },
+  {
+    id: "vendeur1-default",
+    login: "vendeur1",
+    password: "v12026",
+    role: "vendeur",
+    name: "Vendeur 1",
+    mustChangePassword: true,
+    zones: [],
+    secteurs: [],
+    objectifMensuel: 0,
+  },
+];
 
 const defaultConfig: CompanyConfig = {
   nom: "", sigle: "", regime: "", capital: "", rccm: "", compteBancaire: "",
@@ -34,40 +59,23 @@ const defaultConfig: CompanyConfig = {
 const Index = () => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [currentScreen, setCurrentScreen] = useState("dashboard");
-  const gerantUser: AppUser = {
-    id: crypto.randomUUID(),
-    login: "Gerant",
-    password: "g2026",
-    role: "gerant",
-    name: "Gérant",
-    mustChangePassword: true,
-    zones: [],
-    secteurs: [],
-    objectifMensuel: 0,
-  };
-  const vendeurUser: AppUser = {
-    id: crypto.randomUUID(),
-    login: "vendeur1",
-    password: "v12026",
-    role: "vendeur",
-    name: "Vendeur 1",
-    mustChangePassword: true,
-    zones: [],
-    secteurs: [],
-    objectifMensuel: 0,
-  };
-  const [users, setUsers] = useState<AppUser[]>([adminUser, gerantUser, vendeurUser]);
-  const [offreGroups, setOffreGroups] = useState<OffreGroup[]>(defaultOffreGroups);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [zones, setZones] = useState<Zone[]>([]);
-  const [fats, setFats] = useState<FAT[]>([]);
-  const [sectors, setSectors] = useState<Sector[]>([]);
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [config, setConfig] = useState<CompanyConfig>(defaultConfig);
+  const [users, setUsers] = useLocalStorage<AppUser[]>("isp_users", defaultUsers);
+  const [offreGroups, setOffreGroups] = useLocalStorage<OffreGroup[]>("isp_offres", defaultOffreGroups);
+  const [clients, setClients] = useLocalStorage<Client[]>("isp_clients", []);
+  const [zones, setZones] = useLocalStorage<Zone[]>("isp_zones", []);
+  const [fats, setFats] = useLocalStorage<FAT[]>("isp_fats", []);
+  const [sectors, setSectors] = useLocalStorage<Sector[]>("isp_sectors", []);
+  const [subscriptions, setSubscriptions] = useLocalStorage<Subscription[]>("isp_subscriptions", []);
+  const [config, setConfig] = useLocalStorage<CompanyConfig>("isp_config", defaultConfig);
 
-  const handleLogin = (user: AppUser) => setCurrentUser(user);
+  const handleLogin = (user: AppUser) => {
+    // Refresh user data from stored users
+    const freshUser = users.find(u => u.id === user.id);
+    setCurrentUser(freshUser || user);
+  };
   const handleChangePassword = (userId: string, newPassword: string) => {
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, password: newPassword, mustChangePassword: false } : u));
+    setCurrentUser(prev => prev && prev.id === userId ? { ...prev, password: newPassword, mustChangePassword: false } : prev);
   };
   const handleLogout = () => { setCurrentUser(null); setCurrentScreen("dashboard"); };
 
