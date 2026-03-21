@@ -34,7 +34,29 @@ const defaultConfig: CompanyConfig = {
 const Index = () => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [currentScreen, setCurrentScreen] = useState("dashboard");
-  const [users, setUsers] = useState<AppUser[]>([adminUser]);
+  const gerantUser: AppUser = {
+    id: crypto.randomUUID(),
+    login: "Gerant",
+    password: "g2026",
+    role: "gerant",
+    name: "Gérant",
+    mustChangePassword: true,
+    zones: [],
+    secteurs: [],
+    objectifMensuel: 0,
+  };
+  const vendeurUser: AppUser = {
+    id: crypto.randomUUID(),
+    login: "vendeur1",
+    password: "v12026",
+    role: "vendeur",
+    name: "Vendeur 1",
+    mustChangePassword: true,
+    zones: [],
+    secteurs: [],
+    objectifMensuel: 0,
+  };
+  const [users, setUsers] = useState<AppUser[]>([adminUser, gerantUser, vendeurUser]);
   const [offreGroups, setOffreGroups] = useState<OffreGroup[]>(defaultOffreGroups);
   const [clients, setClients] = useState<Client[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
