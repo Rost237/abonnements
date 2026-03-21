@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Pencil, Trash2, RotateCcw } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, RotateCcw, Link2, Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 import type { AppUser, UserRole, Zone, Sector } from "@/types";
 
 const roleLabels: Record<UserRole, string> = { admin: "Administrateur", coadmin: "CoAdministrateur", gerant: "Gérant", vendeur: "Vendeur" };
@@ -32,15 +33,38 @@ export default function UsersScreen({ currentUser, users, onUsersChange, zones, 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<AppUser | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [linkDialog, setLinkDialog] = useState<AppUser | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const isAdmin = currentUser.role === "admin" || currentUser.role === "coadmin";
   const gerants = users.filter(u => u.role === "gerant");
 
   const filtered = users.filter(u =>
-    u.id !== "admin-root" || true // show all
-  ).filter(u =>
     [u.name, u.login, u.role].some(v => v.toLowerCase().includes(search.toLowerCase()))
   );
+
+  const generateLoginLink = (user: AppUser) => {
+    const base = window.location.origin;
+    return `${base}/?login=${encodeURIComponent(user.login)}`;
+  };
+
+  const handleCopyLink = async (user: AppUser) => {
+    const link = generateLoginLink(user);
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      toast.success("Lien copié !");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Impossible de copier");
+    }
+  };
+
+  const handleShareWhatsApp = (user: AppUser) => {
+    const link = generateLoginLink(user);
+    const text = `Bonjour ${user.name}, voici votre lien de connexion à ISP Manager :\n${link}\n\nLogin : ${user.login}\nMot de passe par défaut : password\n\nVeuillez modifier votre mot de passe à la première connexion.`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+  };
 
   const handleSave = () => {
     if (!form.name || !form.login) return;
@@ -60,6 +84,12 @@ export default function UsersScreen({ currentUser, users, onUsersChange, zones, 
         gerantId: form.gerantId || undefined,
       };
       onUsersChange([...users, newUser]);
+      // Show link dialog after creation
+      setOpen(false);
+      setForm(emptyForm);
+      setEditing(null);
+      setLinkDialog(newUser);
+      return;
     }
     setForm(emptyForm);
     setEditing(null);
@@ -79,6 +109,7 @@ export default function UsersScreen({ currentUser, users, onUsersChange, zones, 
 
   const handleResetPassword = (id: string) => {
     onUsersChange(users.map(u => u.id === id ? { ...u, password: "password", mustChangePassword: true } : u));
+    toast.success("Mot de passe réinitialisé");
   };
 
   const openNew = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
@@ -99,6 +130,7 @@ export default function UsersScreen({ currentUser, users, onUsersChange, zones, 
         <Button onClick={openNew} className="h-10 rounded-md gap-2"><Plus size={16} /> Nouvel utilisateur</Button>
       </div>
 
+      {/* Create/Edit dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -137,25 +169,39 @@ export default function UsersScreen({ currentUser, users, onUsersChange, zones, 
                 </Select>
               </div>
             )}
+            {form.role === "vendeur" && (
+              <div className="space-y-1.5">
+                <Label className="text-foreground">Secteurs de travail</Label>
+                <div className="flex flex-wrap gap-2 p-2 bg-muted rounded-md min-h-[40px]">
+                  {sectors.map(s => (
+                    <button key={s.id} onClick={() => setForm(f => ({ ...f, secteurs: f.secteurs.includes(s.id) ? f.secteurs.filter(x => x !== s.id) : [...f.secteurs, s.id] }))}
+                      className={`px-2.5 py-1 text-xs rounded-md font-medium transition-colors ${form.secteurs.includes(s.id) ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-accent"}`}>
+                      {s.nom}
+                    </button>
+                  ))}
+                  {sectors.length === 0 && <p className="text-xs text-muted-foreground">Aucun secteur créé</p>}
+                </div>
+              </div>
+            )}
+            {form.role === "gerant" && (
+              <div className="space-y-1.5">
+                <Label className="text-foreground">Zones de travail</Label>
+                <div className="flex flex-wrap gap-2 p-2 bg-muted rounded-md min-h-[40px]">
+                  {zones.map(z => (
+                    <button key={z.id} onClick={() => setForm(f => ({ ...f, zones: f.zones.includes(z.id) ? f.zones.filter(x => x !== z.id) : [...f.zones, z.id] }))}
+                      className={`px-2.5 py-1 text-xs rounded-md font-medium transition-colors ${form.zones.includes(z.id) ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-accent"}`}>
+                      {z.nom}
+                    </button>
+                  ))}
+                  {zones.length === 0 && <p className="text-xs text-muted-foreground">Aucune zone créée</p>}
+                </div>
+              </div>
+            )}
             {(form.role === "gerant" || form.role === "vendeur") && (
-              <>
-                <div className="space-y-1.5">
-                  <Label className="text-foreground">Zones de travail</Label>
-                  <div className="flex flex-wrap gap-2 p-2 bg-muted rounded-md min-h-[40px]">
-                    {zones.map(z => (
-                      <button key={z.id} onClick={() => setForm(f => ({ ...f, zones: f.zones.includes(z.id) ? f.zones.filter(x => x !== z.id) : [...f.zones, z.id] }))}
-                        className={`px-2.5 py-1 text-xs rounded-md font-medium transition-colors ${form.zones.includes(z.id) ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-accent"}`}>
-                        {z.nom}
-                      </button>
-                    ))}
-                    {zones.length === 0 && <p className="text-xs text-muted-foreground">Aucune zone créée</p>}
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-foreground">Objectif mensuel (FCFA)</Label>
-                  <Input type="number" value={form.objectifMensuel || ""} onChange={e => setForm(f => ({ ...f, objectifMensuel: Number(e.target.value) }))} placeholder="500000" className="h-10 rounded-md" />
-                </div>
-              </>
+              <div className="space-y-1.5">
+                <Label className="text-foreground">Objectif mensuel (FCFA)</Label>
+                <Input type="number" value={form.objectifMensuel || ""} onChange={e => setForm(f => ({ ...f, objectifMensuel: Number(e.target.value) }))} placeholder="500000" className="h-10 rounded-md" />
+              </div>
             )}
             {!editing && (
               <p className="text-xs text-muted-foreground bg-muted p-2 rounded-md">
@@ -167,6 +213,42 @@ export default function UsersScreen({ currentUser, users, onUsersChange, zones, 
               <Button className="flex-1 rounded-md" onClick={handleSave} disabled={!form.name || !form.login}>{editing ? "Modifier" : "Créer"}</Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link sharing dialog */}
+      <Dialog open={!!linkDialog} onOpenChange={() => { setLinkDialog(null); setCopied(false); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Link2 size={18} /> Lien de connexion généré</DialogTitle>
+          </DialogHeader>
+          {linkDialog && (
+            <div className="space-y-4 pt-2">
+              <div className="bg-muted p-3 rounded-md space-y-2">
+                <p className="text-sm text-foreground"><strong>Utilisateur :</strong> {linkDialog.name}</p>
+                <p className="text-sm text-foreground"><strong>Login :</strong> <span className="font-mono">{linkDialog.login}</span></p>
+                <p className="text-sm text-foreground"><strong>Rôle :</strong> {roleLabels[linkDialog.role]}</p>
+                <p className="text-sm text-muted-foreground"><strong>Mot de passe :</strong> <span className="font-mono">password</span></p>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-foreground text-xs">Lien de connexion</Label>
+                <div className="flex gap-2">
+                  <Input readOnly value={generateLoginLink(linkDialog)} className="h-10 rounded-md font-mono text-xs" />
+                  <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => handleCopyLink(linkDialog)}>
+                    {copied ? <Check size={16} className="text-success" /> : <Copy size={16} />}
+                  </Button>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1 rounded-md" onClick={() => handleShareWhatsApp(linkDialog)}>
+                  📱 Envoyer par WhatsApp
+                </Button>
+                <Button className="flex-1 rounded-md" onClick={() => { setLinkDialog(null); setCopied(false); }}>
+                  Fermer
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -183,7 +265,7 @@ export default function UsersScreen({ currentUser, users, onUsersChange, zones, 
               <TableHead>Login</TableHead>
               <TableHead>Rôle</TableHead>
               <TableHead className="hidden sm:table-cell">Objectif</TableHead>
-              <TableHead className="w-[120px]">Actions</TableHead>
+              <TableHead className="w-[140px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -199,6 +281,7 @@ export default function UsersScreen({ currentUser, users, onUsersChange, zones, 
                   <div className="flex gap-1">
                     {u.id !== "admin-root" && (
                       <>
+                        <button onClick={() => setLinkDialog(u)} className="p-1.5 rounded-md hover:bg-accent transition-colors text-muted-foreground hover:text-primary" title="Lien de connexion"><Link2 size={14} /></button>
                         <button onClick={() => handleEdit(u)} className="p-1.5 rounded-md hover:bg-accent transition-colors text-muted-foreground hover:text-foreground" title="Modifier"><Pencil size={14} /></button>
                         <button onClick={() => handleResetPassword(u.id)} className="p-1.5 rounded-md hover:bg-warning/10 transition-colors text-muted-foreground hover:text-warning" title="Réinitialiser mot de passe"><RotateCcw size={14} /></button>
                         <button onClick={() => handleDelete(u.id)} className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Supprimer"><Trash2 size={14} /></button>

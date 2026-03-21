@@ -13,7 +13,11 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ users, onLogin, onChangePassword }: LoginScreenProps) {
-  const [login, setLogin] = useState("");
+  // Pre-fill login from URL query param (?login=xxx)
+  const urlParams = new URLSearchParams(window.location.search);
+  const prefillLogin = urlParams.get("login") || "";
+
+  const [login, setLogin] = useState(prefillLogin);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
