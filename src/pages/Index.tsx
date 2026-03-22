@@ -106,6 +106,8 @@ const Index = () => {
         return <UsersScreen currentUser={currentUser} users={users} onUsersChange={setUsers} zones={zones} sectors={sectors} />;
       case "settings":
         return <SettingsScreen config={config} onConfigChange={setConfig} userRole={currentUser.role} />;
+      case "history":
+        return <ActivityLogScreen logs={activityLogs} userRole={currentUser.role} />;
       default:
         return <DashboardScreen onNavigate={setCurrentScreen} userRole={currentUser.role} currentUser={currentUser} clients={clients} subscriptions={subscriptions} users={users} config={config} />;
     }
