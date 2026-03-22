@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Save } from "lucide-react";
+import { Plus, X, Save, Upload, Trash2 } from "lucide-react";
 import type { CompanyConfig, UserRole } from "@/types";
 
 interface SettingsScreenProps {
@@ -17,6 +16,7 @@ export default function SettingsScreen({ config, onConfigChange, userRole }: Set
   const [form, setForm] = useState<CompanyConfig>(config);
   const [newMode, setNewMode] = useState("");
   const isAdmin = userRole === "admin" || userRole === "coadmin";
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => { onConfigChange(form); };
   const addMode = () => {
@@ -25,6 +25,15 @@ export default function SettingsScreen({ config, onConfigChange, userRole }: Set
     setNewMode("");
   };
   const removeMode = (i: number) => setForm(f => ({ ...f, modesPaiement: f.modesPaiement.filter((_, idx) => idx !== i) }));
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 500_000) { alert("Le fichier est trop volumineux (max 500 Ko)"); return; }
+    const reader = new FileReader();
+    reader.onload = () => setForm(f => ({ ...f, logo: reader.result as string }));
+    reader.readAsDataURL(file);
+  };
 
   if (!isAdmin) {
     return (
@@ -38,6 +47,32 @@ export default function SettingsScreen({ config, onConfigChange, userRole }: Set
   return (
     <div className="space-y-6 max-w-2xl">
       <h2 className="text-xl font-bold text-foreground tracking-tight">Configuration de l'entreprise</h2>
+
+      {/* Logo */}
+      <div className="bg-card rounded-lg shadow-card p-5 space-y-4">
+        <h3 className="text-sm font-semibold text-foreground">Logo de l'entreprise</h3>
+        <div className="flex items-center gap-4">
+          {form.logo ? (
+            <div className="relative">
+              <img src={form.logo} alt="Logo" className="w-20 h-20 rounded-lg object-contain border border-border bg-background" />
+              <button onClick={() => setForm(f => ({ ...f, logo: "" }))} className="absolute -top-2 -right-2 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center">
+                <Trash2 size={10} />
+              </button>
+            </div>
+          ) : (
+            <div className="w-20 h-20 rounded-lg border-2 border-dashed border-border flex items-center justify-center bg-muted">
+              <Upload size={20} className="text-muted-foreground" />
+            </div>
+          )}
+          <div>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => fileRef.current?.click()}>
+              <Upload size={14} /> {form.logo ? "Changer" : "Télécharger"}
+            </Button>
+            <p className="text-xs text-muted-foreground mt-1">PNG, JPG — max 500 Ko</p>
+            <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/svg+xml" className="hidden" onChange={handleLogoUpload} />
+          </div>
+        </div>
+      </div>
 
       <div className="bg-card rounded-lg shadow-card p-5 space-y-4">
         <h3 className="text-sm font-semibold text-foreground">Informations légales</h3>

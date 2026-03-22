@@ -33,6 +33,8 @@ export interface Offre {
   price: number;
 }
 
+export type PaymentStatus = "reussi" | "echoue" | "en_attente";
+
 export interface Subscription {
   id: string;
   clientId: string;
@@ -52,6 +54,14 @@ export interface Subscription {
   modePaiement: string;
   total: number;
   date: string;
+  // New fields
+  dateDebut: string;
+  dateFin: string;
+  renouvellementAuto: boolean;
+  refTransaction: string;
+  statutPaiement: PaymentStatus;
+  operateurMobile: string;
+  montantPaye: number;
 }
 
 export interface CompanyConfig {
@@ -67,6 +77,7 @@ export interface CompanyConfig {
   boitePostale: string;
   devise: string;
   modesPaiement: string[];
+  logo: string; // base64
 }
 
 export interface Client {
@@ -100,4 +111,17 @@ export interface FAT {
   quartier: string;
   localisation: string;
   description: string;
+}
+
+export interface ActivityLog {
+  id: string;
+  userId: string;
+  userName: string;
+  action: string; // "create" | "update" | "delete"
+  entity: string; // "client" | "subscription" | "zone" | etc.
+  entityId: string;
+  entityLabel: string;
+  before: string; // JSON stringified
+  after: string;  // JSON stringified
+  date: string;
 }
