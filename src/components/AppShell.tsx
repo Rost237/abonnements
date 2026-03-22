@@ -13,6 +13,7 @@ const navItems = [
   { icon: Cable, label: "FAT", id: "fat", adminOnly: true },
   { icon: Tag, label: "Offres", id: "offres", adminOnly: true },
   { icon: Target, label: "Utilisateurs", id: "users", adminOnly: true },
+  { icon: History, label: "Historique", id: "history", adminOnly: true },
   { icon: Settings, label: "Paramètres", id: "settings", adminOnly: true },
 ];
 
