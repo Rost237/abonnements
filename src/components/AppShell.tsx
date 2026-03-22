@@ -33,7 +33,7 @@ export default function AppShell({ children, currentScreen, onNavigate, userRole
   const filteredNav = navItems.filter(item => {
     if (item.adminOnly && userRole !== "admin" && userRole !== "coadmin") return false;
     if (userRole === "vendeur") return ["dashboard", "clients", "subscriptions", "sectors"].includes(item.id);
-    if (userRole === "gerant") return ["dashboard", "clients", "subscriptions", "zones", "sectors"].includes(item.id);
+    if (userRole === "gerant") return ["dashboard", "clients", "subscriptions", "zones", "sectors", "history"].includes(item.id);
     return true;
   });
 
