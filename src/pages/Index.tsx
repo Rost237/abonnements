@@ -10,8 +10,9 @@ import OffresScreen, { defaultOffreGroups } from "@/components/OffresScreen";
 import UsersScreen from "@/components/UsersScreen";
 import SettingsScreen from "@/components/SettingsScreen";
 import SectorsScreen from "@/components/SectorsScreen";
+import ActivityLogScreen from "@/components/ActivityLogScreen";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import type { AppUser, Client, Zone, FAT, Sector, OffreGroup, Subscription, CompanyConfig } from "@/types";
+import type { AppUser, Client, Zone, FAT, Sector, OffreGroup, Subscription, CompanyConfig, ActivityLog } from "@/types";
 
 const defaultUsers: AppUser[] = [
   {
