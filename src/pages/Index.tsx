@@ -69,6 +69,7 @@ const Index = () => {
   const [sectors, setSectors] = useLocalStorage<Sector[]>("isp_sectors", []);
   const [subscriptions, setSubscriptions] = useLocalStorage<Subscription[]>("isp_subscriptions", []);
   const [config, setConfig] = useLocalStorage<CompanyConfig>("isp_config", defaultConfig);
+  const [activityLogs, setActivityLogs] = useLocalStorage<ActivityLog[]>("isp_activity_logs", []);
 
   const handleLogin = (user: AppUser) => {
     // Refresh user data from stored users
