@@ -10,8 +10,9 @@ import OffresScreen, { defaultOffreGroups } from "@/components/OffresScreen";
 import UsersScreen from "@/components/UsersScreen";
 import SettingsScreen from "@/components/SettingsScreen";
 import SectorsScreen from "@/components/SectorsScreen";
+import ActivityLogScreen from "@/components/ActivityLogScreen";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import type { AppUser, Client, Zone, FAT, Sector, OffreGroup, Subscription, CompanyConfig } from "@/types";
+import type { AppUser, Client, Zone, FAT, Sector, OffreGroup, Subscription, CompanyConfig, ActivityLog } from "@/types";
 
 const defaultUsers: AppUser[] = [
   {
@@ -54,6 +55,7 @@ const defaultConfig: CompanyConfig = {
   localisation: "", contacts: "", siteWeb: "", boitePostale: "",
   devise: "FCFA",
   modesPaiement: ["Espèces", "Mobile Money", "Virement bancaire"],
+  logo: "",
 };
 
 const Index = () => {
@@ -67,6 +69,7 @@ const Index = () => {
   const [sectors, setSectors] = useLocalStorage<Sector[]>("isp_sectors", []);
   const [subscriptions, setSubscriptions] = useLocalStorage<Subscription[]>("isp_subscriptions", []);
   const [config, setConfig] = useLocalStorage<CompanyConfig>("isp_config", defaultConfig);
+  const [activityLogs, setActivityLogs] = useLocalStorage<ActivityLog[]>("isp_activity_logs", []);
 
   const handleLogin = (user: AppUser) => {
     // Refresh user data from stored users
@@ -90,7 +93,7 @@ const Index = () => {
       case "clients":
         return <ClientsScreen userRole={currentUser.role} clients={clients} onClientsChange={setClients} zones={zones} sectors={sectors} />;
       case "subscriptions":
-        return <SubscriptionScreen offreGroups={offreGroups} userRole={currentUser.role} currentUser={currentUser} clients={clients} onClientsChange={setClients} zones={zones} sectors={sectors} fats={fats} users={users} subscriptions={subscriptions} onSubscriptionsChange={setSubscriptions} config={config} />;
+        return <SubscriptionScreen offreGroups={offreGroups} userRole={currentUser.role} currentUser={currentUser} clients={clients} onClientsChange={setClients} zones={zones} sectors={sectors} onSectorsChange={setSectors} fats={fats} users={users} subscriptions={subscriptions} onSubscriptionsChange={setSubscriptions} config={config} />;
       case "zones":
         return <ZonesScreen userRole={currentUser.role} zones={zones} onZonesChange={setZones} />;
       case "sectors":
@@ -103,6 +106,8 @@ const Index = () => {
         return <UsersScreen currentUser={currentUser} users={users} onUsersChange={setUsers} zones={zones} sectors={sectors} />;
       case "settings":
         return <SettingsScreen config={config} onConfigChange={setConfig} userRole={currentUser.role} />;
+      case "history":
+        return <ActivityLogScreen logs={activityLogs} userRole={currentUser.role} />;
       default:
         return <DashboardScreen onNavigate={setCurrentScreen} userRole={currentUser.role} currentUser={currentUser} clients={clients} subscriptions={subscriptions} users={users} config={config} />;
     }

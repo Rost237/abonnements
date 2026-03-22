@@ -1,8 +1,40 @@
+import { useState } from "react";
 import GoalRing from "@/components/GoalRing";
 import { motion } from "framer-motion";
-import { Plus, Users, Radio, TrendingUp, Clock, DollarSign } from "lucide-react";
+import { Users, Radio, TrendingUp, Clock, Plus, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Subscription, AppUser, Client, UserRole, CompanyConfig } from "@/types";
+
+type PeriodFilter = "today" | "week" | "month" | "year" | "all";
+
+function filterByPeriod(subs: Subscription[], period: PeriodFilter): Subscription[] {
+  if (period === "all") return subs;
+  const now = new Date();
+  const start = new Date();
+  if (period === "today") start.setHours(0, 0, 0, 0);
+  else if (period === "week") start.setDate(now.getDate() - 7);
+  else if (period === "month") start.setMonth(now.getMonth(), 1);
+  else if (period === "year") start.setFullYear(now.getFullYear(), 0, 1);
+  return subs.filter(s => new Date(s.date) >= start);
+}
+
+function getPreviousPeriodSubs(subs: Subscription[], period: PeriodFilter): Subscription[] {
+  if (period === "all" || period === "today") return [];
+  const now = new Date();
+  let start: Date, end: Date;
+  if (period === "week") {
+    end = new Date(now.getTime() - 7 * 86400000);
+    start = new Date(end.getTime() - 7 * 86400000);
+  } else if (period === "month") {
+    end = new Date(now.getFullYear(), now.getMonth(), 1);
+    start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  } else {
+    end = new Date(now.getFullYear(), 0, 1);
+    start = new Date(now.getFullYear() - 1, 0, 1);
+  }
+  return subs.filter(s => { const d = new Date(s.date); return d >= start && d < end; });
+}
 
 interface DashboardScreenProps {
   onNavigate: (screen: string) => void;
@@ -15,36 +47,53 @@ interface DashboardScreenProps {
 }
 
 export default function DashboardScreen({ onNavigate, userRole, currentUser, clients, subscriptions, users, config }: DashboardScreenProps) {
+  const [period, setPeriod] = useState<PeriodFilter>("month");
   const devise = config.devise || "FCFA";
   const formatCurrency = (n: number) => new Intl.NumberFormat("fr-FR").format(n) + " " + devise;
 
-  // Filter data based on role
   const isVendeur = userRole === "vendeur";
-  const relevantSubs = isVendeur ? subscriptions.filter(s => s.vendeurId === currentUser.id) : subscriptions;
+  const allRelevant = isVendeur ? subscriptions.filter(s => s.vendeurId === currentUser.id) : subscriptions;
+  const relevantSubs = filterByPeriod(allRelevant, period);
+  const prevSubs = getPreviousPeriodSubs(allRelevant, period);
+
   const activeClients = clients.filter(c => c.status === "actif").length;
   const caTotal = relevantSubs.reduce((sum, s) => sum + s.total, 0);
+  const caPrev = prevSubs.reduce((sum, s) => sum + s.total, 0);
   const objectif = currentUser.objectifMensuel || 500000;
 
-  // CA by vendeur (admin only)
+  const caChange = caPrev > 0 ? ((caTotal - caPrev) / caPrev) * 100 : 0;
+  const subsChange = prevSubs.length > 0 ? ((relevantSubs.length - prevSubs.length) / prevSubs.length) * 100 : 0;
+
   const vendeurs = users.filter(u => u.role === "vendeur");
   const caByVendeur = vendeurs.map(v => ({
     name: v.name,
-    ca: subscriptions.filter(s => s.vendeurId === v.id).reduce((sum, s) => sum + s.total, 0),
+    ca: filterByPeriod(subscriptions.filter(s => s.vendeurId === v.id), period).reduce((sum, s) => sum + s.total, 0),
     objectif: v.objectifMensuel,
   }));
 
   const stats = [
-    { label: "Clients actifs", value: String(activeClients), icon: Users, color: "text-success" },
-    { label: "Abonnements", value: String(relevantSubs.length), icon: Radio, color: "text-primary" },
-    { label: isVendeur ? "Mon CA" : "CA global", value: formatCurrency(caTotal), icon: TrendingUp, color: "text-warning" },
+    { label: "Clients actifs", value: String(activeClients), icon: Users, color: "text-success", change: null },
+    { label: "Abonnements", value: String(relevantSubs.length), icon: Radio, color: "text-primary", change: subsChange },
+    { label: isVendeur ? "Mon CA" : "CA global", value: formatCurrency(caTotal), icon: TrendingUp, color: "text-warning", change: caChange },
   ];
 
-  // Recent activity
   const recentSubs = [...relevantSubs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+
+  const periodLabels: Record<PeriodFilter, string> = { today: "Aujourd'hui", week: "Cette semaine", month: "Ce mois", year: "Cette année", all: "Tout" };
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <h2 className="text-xl font-bold text-foreground tracking-tight">Tableau de bord</h2>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h2 className="text-xl font-bold text-foreground tracking-tight">Tableau de bord</h2>
+        <Select value={period} onValueChange={v => setPeriod(v as PeriodFilter)}>
+          <SelectTrigger className="h-9 w-40 rounded-md text-sm"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {(Object.keys(periodLabels) as PeriodFilter[]).map(p => (
+              <SelectItem key={p} value={p}>{periodLabels[p]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="grid grid-cols-3 gap-3">
         {stats.map((s, i) => (
@@ -54,6 +103,12 @@ export default function DashboardScreen({ onNavigate, userRole, currentUser, cli
               <span className="text-xs text-muted-foreground">{s.label}</span>
             </div>
             <p className="text-lg font-bold tabular-nums text-foreground truncate">{s.value}</p>
+            {s.change !== null && s.change !== 0 && (
+              <div className={`flex items-center gap-1 mt-1 text-xs font-medium ${s.change > 0 ? "text-success" : "text-destructive"}`}>
+                {s.change > 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                {Math.abs(Math.round(s.change))}% vs précédent
+              </div>
+            )}
           </motion.div>
         ))}
       </div>
@@ -73,7 +128,6 @@ export default function DashboardScreen({ onNavigate, userRole, currentUser, cli
         <Button onClick={() => onNavigate("subscriptions")} className="h-14 rounded-md gap-2 font-semibold"><Plus size={18} /> Nouvel Abonnement</Button>
       </div>
 
-      {/* CA by vendeur - admin only */}
       {(userRole === "admin" || userRole === "coadmin") && vendeurs.length > 0 && (
         <div className="bg-card rounded-lg shadow-card">
           <div className="px-4 py-3 border-b border-border">
@@ -100,7 +154,6 @@ export default function DashboardScreen({ onNavigate, userRole, currentUser, cli
         </div>
       )}
 
-      {/* Recent activity */}
       <div className="bg-card rounded-lg shadow-card">
         <div className="px-4 py-3 border-b border-border">
           <h3 className="text-sm font-semibold text-foreground">Activité récente</h3>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Wifi, WifiOff, LayoutDashboard, Users, Radio, Settings, LogOut, Target, MapPinned, Cable, Tag, Map, Menu, X } from "lucide-react";
+import { Wifi, WifiOff, LayoutDashboard, Users, Radio, Settings, LogOut, Target, MapPinned, Cable, Tag, Map, Menu, X, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types";
 
@@ -13,6 +13,7 @@ const navItems = [
   { icon: Cable, label: "FAT", id: "fat", adminOnly: true },
   { icon: Tag, label: "Offres", id: "offres", adminOnly: true },
   { icon: Target, label: "Utilisateurs", id: "users", adminOnly: true },
+  { icon: History, label: "Historique", id: "history", adminOnly: true },
   { icon: Settings, label: "Paramètres", id: "settings", adminOnly: true },
 ];
 
@@ -32,7 +33,7 @@ export default function AppShell({ children, currentScreen, onNavigate, userRole
   const filteredNav = navItems.filter(item => {
     if (item.adminOnly && userRole !== "admin" && userRole !== "coadmin") return false;
     if (userRole === "vendeur") return ["dashboard", "clients", "subscriptions", "sectors"].includes(item.id);
-    if (userRole === "gerant") return ["dashboard", "clients", "subscriptions", "zones", "sectors"].includes(item.id);
+    if (userRole === "gerant") return ["dashboard", "clients", "subscriptions", "zones", "sectors", "history"].includes(item.id);
     return true;
   });
 
