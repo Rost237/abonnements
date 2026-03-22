@@ -54,6 +54,7 @@ const defaultConfig: CompanyConfig = {
   localisation: "", contacts: "", siteWeb: "", boitePostale: "",
   devise: "FCFA",
   modesPaiement: ["Espèces", "Mobile Money", "Virement bancaire"],
+  logo: "",
 };
 
 const Index = () => {
