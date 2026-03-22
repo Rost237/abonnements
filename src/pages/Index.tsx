@@ -91,7 +91,7 @@ const Index = () => {
       case "clients":
         return <ClientsScreen userRole={currentUser.role} clients={clients} onClientsChange={setClients} zones={zones} sectors={sectors} />;
       case "subscriptions":
-        return <SubscriptionScreen offreGroups={offreGroups} userRole={currentUser.role} currentUser={currentUser} clients={clients} onClientsChange={setClients} zones={zones} sectors={sectors} fats={fats} users={users} subscriptions={subscriptions} onSubscriptionsChange={setSubscriptions} config={config} />;
+        return <SubscriptionScreen offreGroups={offreGroups} userRole={currentUser.role} currentUser={currentUser} clients={clients} onClientsChange={setClients} zones={zones} sectors={sectors} onSectorsChange={setSectors} fats={fats} users={users} subscriptions={subscriptions} onSubscriptionsChange={setSubscriptions} config={config} />;
       case "zones":
         return <ZonesScreen userRole={currentUser.role} zones={zones} onZonesChange={setZones} />;
       case "sectors":
