@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Wifi, WifiOff, LayoutDashboard, Users, Radio, Settings, LogOut, Target, MapPinned, Cable, Tag, Map, Menu, X } from "lucide-react";
+import { Wifi, WifiOff, LayoutDashboard, Users, Radio, Settings, LogOut, Target, MapPinned, Cable, Tag, Map, Menu, X, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types";
 
