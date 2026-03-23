@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Client, Zone, Sector, UserRole } from "@/types";
+import type { Client, Zone, Sector, UserRole, Subscription } from "@/types";
 
 const statusConfig = {
   actif: { label: "Actif", className: "bg-success/15 text-success border-success/30" },
