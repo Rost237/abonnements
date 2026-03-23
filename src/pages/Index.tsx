@@ -12,6 +12,7 @@ import SettingsScreen from "@/components/SettingsScreen";
 import SectorsScreen from "@/components/SectorsScreen";
 import ActivityLogScreen from "@/components/ActivityLogScreen";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useTheme } from "@/hooks/useTheme";
 import type { AppUser, Client, Zone, FAT, Sector, OffreGroup, Subscription, CompanyConfig, ActivityLog } from "@/types";
 
 const defaultUsers: AppUser[] = [
@@ -70,9 +71,9 @@ const Index = () => {
   const [subscriptions, setSubscriptions] = useLocalStorage<Subscription[]>("isp_subscriptions", []);
   const [config, setConfig] = useLocalStorage<CompanyConfig>("isp_config", defaultConfig);
   const [activityLogs, setActivityLogs] = useLocalStorage<ActivityLog[]>("isp_activity_logs", []);
+  const { theme, toggle: toggleDark } = useTheme();
 
   const handleLogin = (user: AppUser) => {
-    // Refresh user data from stored users
     const freshUser = users.find(u => u.id === user.id);
     setCurrentUser(freshUser || user);
   };
@@ -89,7 +90,7 @@ const Index = () => {
   const renderScreen = () => {
     switch (currentScreen) {
       case "dashboard":
-        return <DashboardScreen onNavigate={setCurrentScreen} userRole={currentUser.role} currentUser={currentUser} clients={clients} subscriptions={subscriptions} users={users} config={config} />;
+        return <DashboardScreen onNavigate={setCurrentScreen} userRole={currentUser.role} currentUser={currentUser} clients={clients} subscriptions={subscriptions} users={users} config={config} zones={zones} />;
       case "clients":
         return <ClientsScreen userRole={currentUser.role} clients={clients} onClientsChange={setClients} zones={zones} sectors={sectors} />;
       case "subscriptions":
@@ -109,12 +110,25 @@ const Index = () => {
       case "history":
         return <ActivityLogScreen logs={activityLogs} userRole={currentUser.role} />;
       default:
-        return <DashboardScreen onNavigate={setCurrentScreen} userRole={currentUser.role} currentUser={currentUser} clients={clients} subscriptions={subscriptions} users={users} config={config} />;
+        return <DashboardScreen onNavigate={setCurrentScreen} userRole={currentUser.role} currentUser={currentUser} clients={clients} subscriptions={subscriptions} users={users} config={config} zones={zones} />;
     }
   };
 
   return (
-    <AppShell currentScreen={currentScreen} onNavigate={setCurrentScreen} userRole={currentUser.role} userName={currentUser.name} isOnline={true} onLogout={handleLogout}>
+    <AppShell
+      currentScreen={currentScreen}
+      onNavigate={setCurrentScreen}
+      userRole={currentUser.role}
+      userName={currentUser.name}
+      isOnline={true}
+      onLogout={handleLogout}
+      clients={clients}
+      subscriptions={subscriptions}
+      currentUser={currentUser}
+      users={users}
+      darkMode={theme === "dark"}
+      onToggleDark={toggleDark}
+    >
       {renderScreen()}
     </AppShell>
   );
