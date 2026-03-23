@@ -23,6 +23,8 @@ interface ClientsScreenProps {
   onClientsChange: (clients: Client[]) => void;
   zones: Zone[];
   sectors: Sector[];
+  subscriptions: Subscription[];
+  onNavigateToSubscription?: (clientId: string) => void;
 }
 
 export default function ClientsScreen({ userRole, clients, onClientsChange, zones, sectors }: ClientsScreenProps) {
