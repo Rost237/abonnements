@@ -46,10 +46,23 @@ export default function ClientsScreen({ userRole, clients, onClientsChange, zone
 
   const handleSave = () => {
     if (!form.name || !form.phone) return;
+    const finalForm = { ...form };
     if (editing) {
-      onClientsChange(clients.map(c => c.id === editing.id ? { ...c, ...form } : c));
+      // Si on met le statut "actif", vérifier qu'il a un abonnement
+      if (finalForm.status === "actif") {
+        const hasActiveSubscription = subscriptions.some(s => s.clientId === editing.id);
+        if (!hasActiveSubscription) {
+          finalForm.status = "prospect";
+        }
+      }
+      onClientsChange(clients.map(c => c.id === editing.id ? { ...c, ...finalForm } : c));
     } else {
-      onClientsChange([...clients, { ...form, id: crypto.randomUUID() }]);
+      const newId = crypto.randomUUID();
+      // Un nouveau client ne peut pas être "actif" sans abonnement
+      if (finalForm.status === "actif") {
+        finalForm.status = "prospect";
+      }
+      onClientsChange([...clients, { ...finalForm, id: newId }]);
     }
     setForm(emptyForm);
     setEditing(null);
