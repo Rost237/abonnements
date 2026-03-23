@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Client, Zone, Sector, UserRole } from "@/types";
+import type { Client, Zone, Sector, UserRole, Subscription } from "@/types";
 
 const statusConfig = {
   actif: { label: "Actif", className: "bg-success/15 text-success border-success/30" },
@@ -23,9 +23,11 @@ interface ClientsScreenProps {
   onClientsChange: (clients: Client[]) => void;
   zones: Zone[];
   sectors: Sector[];
+  subscriptions: Subscription[];
+  onNavigateToSubscription?: (clientId: string) => void;
 }
 
-export default function ClientsScreen({ userRole, clients, onClientsChange, zones, sectors }: ClientsScreenProps) {
+export default function ClientsScreen({ userRole, clients, onClientsChange, zones, sectors, subscriptions, onNavigateToSubscription }: ClientsScreenProps) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "actif" | "prospect" | "inactif">("all");
   const [open, setOpen] = useState(false);
@@ -44,10 +46,23 @@ export default function ClientsScreen({ userRole, clients, onClientsChange, zone
 
   const handleSave = () => {
     if (!form.name || !form.phone) return;
+    const finalForm = { ...form };
     if (editing) {
-      onClientsChange(clients.map(c => c.id === editing.id ? { ...c, ...form } : c));
+      // Si on met le statut "actif", vérifier qu'il a un abonnement
+      if (finalForm.status === "actif") {
+        const hasActiveSubscription = subscriptions.some(s => s.clientId === editing.id);
+        if (!hasActiveSubscription) {
+          finalForm.status = "prospect";
+        }
+      }
+      onClientsChange(clients.map(c => c.id === editing.id ? { ...c, ...finalForm } : c));
     } else {
-      onClientsChange([...clients, { ...form, id: crypto.randomUUID() }]);
+      const newId = crypto.randomUUID();
+      // Un nouveau client ne peut pas être "actif" sans abonnement
+      if (finalForm.status === "actif") {
+        finalForm.status = "prospect";
+      }
+      onClientsChange([...clients, { ...finalForm, id: newId }]);
     }
     setForm(emptyForm);
     setEditing(null);
