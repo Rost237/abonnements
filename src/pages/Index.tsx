@@ -92,7 +92,7 @@ const Index = () => {
       case "dashboard":
         return <DashboardScreen onNavigate={setCurrentScreen} userRole={currentUser.role} currentUser={currentUser} clients={clients} subscriptions={subscriptions} users={users} config={config} zones={zones} />;
       case "clients":
-        return <ClientsScreen userRole={currentUser.role} clients={clients} onClientsChange={setClients} zones={zones} sectors={sectors} />;
+        return <ClientsScreen userRole={currentUser.role} clients={clients} onClientsChange={setClients} zones={zones} sectors={sectors} subscriptions={subscriptions} onNavigateToSubscription={(clientId) => setCurrentScreen("subscriptions")} />;
       case "subscriptions":
         return <SubscriptionScreen offreGroups={offreGroups} userRole={currentUser.role} currentUser={currentUser} clients={clients} onClientsChange={setClients} zones={zones} sectors={sectors} onSectorsChange={setSectors} fats={fats} users={users} subscriptions={subscriptions} onSubscriptionsChange={setSubscriptions} config={config} />;
       case "zones":
