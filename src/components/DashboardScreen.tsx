@@ -1,10 +1,10 @@
 import { useState } from "react";
 import GoalRing from "@/components/GoalRing";
 import { motion } from "framer-motion";
-import { Users, Radio, TrendingUp, Clock, Plus, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Users, Radio, TrendingUp, Clock, Plus, ArrowUpRight, ArrowDownRight, AlertTriangle, MapPin, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Subscription, AppUser, Client, UserRole, CompanyConfig } from "@/types";
+import type { Subscription, AppUser, Client, UserRole, CompanyConfig, Zone } from "@/types";
 
 type PeriodFilter = "today" | "week" | "month" | "year" | "all";
 
@@ -44,9 +44,10 @@ interface DashboardScreenProps {
   subscriptions: Subscription[];
   users: AppUser[];
   config: CompanyConfig;
+  zones?: Zone[];
 }
 
-export default function DashboardScreen({ onNavigate, userRole, currentUser, clients, subscriptions, users, config }: DashboardScreenProps) {
+export default function DashboardScreen({ onNavigate, userRole, currentUser, clients, subscriptions, users, config, zones = [] }: DashboardScreenProps) {
   const [period, setPeriod] = useState<PeriodFilter>("month");
   const devise = config.devise || "FCFA";
   const formatCurrency = (n: number) => new Intl.NumberFormat("fr-FR").format(n) + " " + devise;
@@ -56,7 +57,9 @@ export default function DashboardScreen({ onNavigate, userRole, currentUser, cli
   const relevantSubs = filterByPeriod(allRelevant, period);
   const prevSubs = getPreviousPeriodSubs(allRelevant, period);
 
-  const activeClients = clients.filter(c => c.status === "actif").length;
+  const activeClients = isVendeur
+    ? clients.filter(c => c.status === "actif" && subscriptions.some(s => s.vendeurId === currentUser.id && s.clientId === c.id)).length
+    : clients.filter(c => c.status === "actif").length;
   const caTotal = relevantSubs.reduce((sum, s) => sum + s.total, 0);
   const caPrev = prevSubs.reduce((sum, s) => sum + s.total, 0);
   const objectif = currentUser.objectifMensuel || 500000;
@@ -65,12 +68,45 @@ export default function DashboardScreen({ onNavigate, userRole, currentUser, cli
   const subsChange = prevSubs.length > 0 ? ((relevantSubs.length - prevSubs.length) / prevSubs.length) * 100 : 0;
 
   const vendeurs = users.filter(u => u.role === "vendeur");
-  const caByVendeur = vendeurs.map(v => ({
-    name: v.name,
-    ca: filterByPeriod(subscriptions.filter(s => s.vendeurId === v.id), period).reduce((sum, s) => sum + s.total, 0),
-    objectif: v.objectifMensuel,
-  }));
 
+  const periodLabels: Record<PeriodFilter, string> = { today: "Aujourd'hui", week: "Cette semaine", month: "Ce mois", year: "Cette année", all: "Tout" };
+
+  // === Intelligence métier ===
+  const now = new Date();
+
+  // Clients à relancer (abonnement expiré depuis > 7 jours)
+  const clientsARelancer = subscriptions
+    .filter(s => s.dateFin && new Date(s.dateFin) < now && Math.ceil((now.getTime() - new Date(s.dateFin).getTime()) / 86400000) <= 30)
+    .filter(s => !isVendeur || s.vendeurId === currentUser.id)
+    .reduce((acc, s) => {
+      if (!acc.find(x => x.clientId === s.clientId)) {
+        acc.push({ clientId: s.clientId, clientName: s.clientName, daysSince: Math.ceil((now.getTime() - new Date(s.dateFin).getTime()) / 86400000), offreName: s.offreName });
+      }
+      return acc;
+    }, [] as { clientId: string; clientName: string; daysSince: number; offreName: string }[])
+    .sort((a, b) => a.daysSince - b.daysSince)
+    .slice(0, 5);
+
+  // Zone la plus rentable
+  const caByZone = subscriptions
+    .filter(s => !isVendeur || s.vendeurId === currentUser.id)
+    .reduce((acc, s) => {
+      const key = s.zoneName || s.zoneId;
+      acc[key] = (acc[key] || 0) + s.total;
+      return acc;
+    }, {} as Record<string, number>);
+  const topZones = Object.entries(caByZone).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+  // Score performance vendeur (admin/coadmin)
+  const vendeurScores = vendeurs.map(v => {
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const ca = subscriptions.filter(s => s.vendeurId === v.id && new Date(s.date) >= thisMonth).reduce((sum, s) => sum + s.total, 0);
+    const nbClients = new Set(subscriptions.filter(s => s.vendeurId === v.id && new Date(s.date) >= thisMonth).map(s => s.clientId)).size;
+    const pctObjectif = v.objectifMensuel > 0 ? Math.round((ca / v.objectifMensuel) * 100) : 0;
+    return { name: v.name, ca, nbClients, pctObjectif, objectif: v.objectifMensuel };
+  }).sort((a, b) => b.ca - a.ca);
+
+  // Vendeur dashboard: simplified stats
   const stats = [
     { label: "Clients actifs", value: String(activeClients), icon: Users, color: "text-success", change: null },
     { label: "Abonnements", value: String(relevantSubs.length), icon: Radio, color: "text-primary", change: subsChange },
@@ -78,8 +114,6 @@ export default function DashboardScreen({ onNavigate, userRole, currentUser, cli
   ];
 
   const recentSubs = [...relevantSubs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
-
-  const periodLabels: Record<PeriodFilter, string> = { today: "Aujourd'hui", week: "Cette semaine", month: "Ce mois", year: "Cette année", all: "Tout" };
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -113,6 +147,7 @@ export default function DashboardScreen({ onNavigate, userRole, currentUser, cli
         ))}
       </div>
 
+      {/* Goal ring */}
       <div className="bg-card rounded-lg shadow-card p-6">
         <GoalRing current={caTotal} target={objectif} />
         <div className="text-center mt-3 space-y-1">
@@ -123,37 +158,92 @@ export default function DashboardScreen({ onNavigate, userRole, currentUser, cli
         </div>
       </div>
 
+      {/* Quick actions */}
       <div className="grid grid-cols-2 gap-3">
         <Button onClick={() => onNavigate("clients")} variant="outline" className="h-14 rounded-md gap-2 font-semibold"><Plus size={18} /> Nouveau Client</Button>
         <Button onClick={() => onNavigate("subscriptions")} className="h-14 rounded-md gap-2 font-semibold"><Plus size={18} /> Nouvel Abonnement</Button>
       </div>
 
-      {(userRole === "admin" || userRole === "coadmin") && vendeurs.length > 0 && (
+      {/* === Intelligence métier === */}
+
+      {/* Clients à relancer */}
+      {clientsARelancer.length > 0 && (
         <div className="bg-card rounded-lg shadow-card">
-          <div className="px-4 py-3 border-b border-border">
-            <h3 className="text-sm font-semibold text-foreground">CA par vendeur</h3>
+          <div className="px-4 py-3 border-b border-border flex items-center gap-2">
+            <AlertTriangle size={16} className="text-warning" />
+            <h3 className="text-sm font-semibold text-foreground">Clients à relancer</h3>
           </div>
           <div className="divide-y divide-border">
-            {caByVendeur.map(v => (
-              <div key={v.name} className="flex items-center justify-between px-4 py-3">
+            {clientsARelancer.map(c => (
+              <div key={c.clientId} className="flex items-center justify-between px-4 py-3">
                 <div>
-                  <p className="text-sm font-medium text-foreground">{v.name}</p>
-                  {v.objectif > 0 && (
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-primary rounded-full" style={{ width: `${Math.min(100, (v.ca / v.objectif) * 100)}%` }} />
-                      </div>
-                      <span className="text-xs text-muted-foreground">{Math.round((v.ca / v.objectif) * 100)}%</span>
-                    </div>
-                  )}
+                  <p className="text-sm font-medium text-foreground">{c.clientName}</p>
+                  <p className="text-xs text-muted-foreground">{c.offreName} — expiré depuis {c.daysSince}j</p>
                 </div>
-                <p className="text-sm font-bold tabular-nums text-foreground">{formatCurrency(v.ca)}</p>
+                <span className="text-xs bg-warning/15 text-warning px-2 py-1 rounded-full font-medium">À relancer</span>
               </div>
             ))}
           </div>
         </div>
       )}
 
+      {/* Zones les plus rentables */}
+      {topZones.length > 0 && (
+        <div className="bg-card rounded-lg shadow-card">
+          <div className="px-4 py-3 border-b border-border flex items-center gap-2">
+            <MapPin size={16} className="text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Zones les plus rentables</h3>
+          </div>
+          <div className="divide-y divide-border">
+            {topZones.map(([zone, ca], i) => (
+              <div key={zone} className="flex items-center justify-between px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? "bg-warning/20 text-warning" : "bg-muted text-muted-foreground"}`}>
+                    {i + 1}
+                  </span>
+                  <p className="text-sm font-medium text-foreground">{zone}</p>
+                </div>
+                <p className="text-sm font-bold tabular-nums text-foreground">{formatCurrency(ca)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Score performance vendeurs (admin/coadmin) */}
+      {(userRole === "admin" || userRole === "coadmin") && vendeurScores.length > 0 && (
+        <div className="bg-card rounded-lg shadow-card">
+          <div className="px-4 py-3 border-b border-border flex items-center gap-2">
+            <Award size={16} className="text-success" />
+            <h3 className="text-sm font-semibold text-foreground">Performance vendeurs</h3>
+          </div>
+          <div className="divide-y divide-border">
+            {vendeurScores.map((v, i) => (
+              <div key={v.name} className="px-4 py-3">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"}`}>
+                      {i + 1}
+                    </span>
+                    <p className="text-sm font-medium text-foreground">{v.name}</p>
+                  </div>
+                  <p className="text-sm font-bold tabular-nums text-foreground">{formatCurrency(v.ca)}</p>
+                </div>
+                <div className="flex items-center gap-3 ml-8">
+                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${v.pctObjectif >= 100 ? "bg-success" : v.pctObjectif >= 50 ? "bg-primary" : "bg-destructive"}`}
+                      style={{ width: `${Math.min(100, v.pctObjectif)}%` }} />
+                  </div>
+                  <span className="text-xs font-medium text-muted-foreground w-10 text-right">{v.pctObjectif}%</span>
+                  <span className="text-xs text-muted-foreground">{v.nbClients} client{v.nbClients > 1 ? "s" : ""}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Activité récente */}
       <div className="bg-card rounded-lg shadow-card">
         <div className="px-4 py-3 border-b border-border">
           <h3 className="text-sm font-semibold text-foreground">Activité récente</h3>

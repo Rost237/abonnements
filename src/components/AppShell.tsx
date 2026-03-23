@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Wifi, WifiOff, LayoutDashboard, Users, Radio, Settings, LogOut, Target, MapPinned, Cable, Tag, Map, Menu, X, History } from "lucide-react";
+import { Wifi, WifiOff, LayoutDashboard, Users, Radio, Settings, LogOut, Target, MapPinned, Cable, Tag, Map, Menu, X, History, Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { UserRole } from "@/types";
+import GlobalSearch from "@/components/GlobalSearch";
+import NotificationsPanel from "@/components/NotificationsPanel";
+import type { UserRole, Client, Subscription, AppUser } from "@/types";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", id: "dashboard" },
@@ -25,9 +27,15 @@ interface AppShellProps {
   userName?: string;
   isOnline?: boolean;
   onLogout: () => void;
+  clients: Client[];
+  subscriptions: Subscription[];
+  currentUser: AppUser;
+  users: AppUser[];
+  darkMode: boolean;
+  onToggleDark: () => void;
 }
 
-export default function AppShell({ children, currentScreen, onNavigate, userRole = "admin", userName = "Admin", isOnline = true, onLogout }: AppShellProps) {
+export default function AppShell({ children, currentScreen, onNavigate, userRole = "admin", userName = "Admin", isOnline = true, onLogout, clients, subscriptions, currentUser, users, darkMode, onToggleDark }: AppShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const filteredNav = navItems.filter(item => {
@@ -62,8 +70,13 @@ export default function AppShell({ children, currentScreen, onNavigate, userRole
           ))}
         </nav>
         <div className="p-3 border-t border-border space-y-2">
-          <div className="flex items-center gap-2 px-3 py-1.5 text-xs">
-            {isOnline ? <><Wifi size={14} className="text-success" /><span className="text-success">En ligne</span></> : <><WifiOff size={14} className="text-destructive" /><span className="text-destructive">Hors ligne</span></>}
+          <div className="flex items-center justify-between px-3 py-1.5">
+            <div className="flex items-center gap-2 text-xs">
+              {isOnline ? <><Wifi size={14} className="text-success" /><span className="text-success">En ligne</span></> : <><WifiOff size={14} className="text-destructive" /><span className="text-destructive">Hors ligne</span></>}
+            </div>
+            <button onClick={onToggleDark} className="p-1.5 rounded-md hover:bg-accent transition-colors text-muted-foreground" title="Mode sombre">
+              {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
           </div>
           <button onClick={onLogout} className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm text-destructive hover:bg-destructive/10 transition-colors"><LogOut size={16} /> Déconnexion</button>
         </div>
@@ -81,12 +94,23 @@ export default function AppShell({ children, currentScreen, onNavigate, userRole
               <p className="text-[10px] text-muted-foreground">{userName} · {roleLabel}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <GlobalSearch clients={clients} subscriptions={subscriptions} onNavigate={handleMobileNav} />
+            <NotificationsPanel subscriptions={subscriptions} currentUser={currentUser} users={users} />
+            <button onClick={onToggleDark} className="p-1.5 rounded-md hover:bg-accent transition-colors text-muted-foreground">
+              {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
             {isOnline ? <Wifi size={16} className="text-success" /> : <WifiOff size={16} className="text-destructive" />}
             <button onClick={onLogout} className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors text-destructive">
               <LogOut size={18} />
             </button>
           </div>
+        </header>
+
+        {/* Desktop top bar with search & notifications */}
+        <header className="hidden md:flex items-center justify-end gap-1 px-4 py-2 bg-card border-b border-border">
+          <GlobalSearch clients={clients} subscriptions={subscriptions} onNavigate={onNavigate} />
+          <NotificationsPanel subscriptions={subscriptions} currentUser={currentUser} users={users} />
         </header>
 
         {/* Mobile dropdown menu */}
