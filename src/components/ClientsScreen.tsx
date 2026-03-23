@@ -27,7 +27,7 @@ interface ClientsScreenProps {
   onNavigateToSubscription?: (clientId: string) => void;
 }
 
-export default function ClientsScreen({ userRole, clients, onClientsChange, zones, sectors }: ClientsScreenProps) {
+export default function ClientsScreen({ userRole, clients, onClientsChange, zones, sectors, subscriptions, onNavigateToSubscription }: ClientsScreenProps) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "actif" | "prospect" | "inactif">("all");
   const [open, setOpen] = useState(false);
