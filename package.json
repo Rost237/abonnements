@@ -89,3 +89,22 @@
     "vitest": "^4.1.0"
   }
 }
+{
+  "main": "main.js",
+  "scripts": {
+    "start:electron": "electron .",
+    "build:electron": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^26.0.0",
+    "electron-builder": "^23.6.0"
+  },
+  "build": {
+    "appId": "com.rost237.abonnements",
+    "productName": "Abonnements",
+    "win": {
+      "target": "nsis",
+      "icon": "public/icon.ico"
+    }
+  }
+}
